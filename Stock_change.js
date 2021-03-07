@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Laoseisu muutus tabelisse
 // @namespace    http://tampermonkey.net/
-// @version      1
+// @version      1.2
 // @description  try to take over the world!
 // @author       Jürgen
 // @match        https://*/wp-admin/post.php?post=*&action=edit
@@ -12,6 +12,8 @@
     'use strict';
 
     var list = document.getElementsByClassName('note_content');
+    var table = document.getElementById('order_line_items');
+    var rows = table.rows;
     var keyword = "Laojääki vähendati: ";
     var content;
 
@@ -23,7 +25,7 @@
         }
     }
 
-    var changes = GetChanges(content, keyword);
+    var changes = GetChanges(content, keyword, rows.length);
     console.log(changes);
 
     var skus = new Array();
@@ -39,13 +41,11 @@
 
     // at this point on kaks arrayd: ühes SKU'd, teises laoseisu muutused
 
-    var table = document.getElementById('order_line_items');
-
-    var rows = table.rows;
+    
     for (var b = 0; b < rows.length; b++)
     {
         var sku = rows[b].cells[1].getElementsByClassName('wc-order-item-sku')[0].innerText;
-        sku = sku.slice(5, sku.length);
+        sku = sku.slice(11, sku.length); // vaja muuta vastavalt keelele
 
         var index = skus.indexOf(sku);
         var num = nums[index];
@@ -66,7 +66,7 @@
 })();
 
 
-function GetChanges(content, keyword)
+function GetChanges(content, keyword, rowsLength)
 {
     var changes = new Array();
     while (content.indexOf("→") != -1)// looping kuniks content väärtuselt on kõik nooled eemaldatud
@@ -89,7 +89,11 @@ function GetChanges(content, keyword)
 
         changes.push(change); // lisa muudatus muudatuste nimekirja
 
-        content = content.slice(commaIndex + 2, content.length); // lõika lisatud muudatust contentist välja
+        if (rowsLength == 1) { // kui ainult üks rida tabelis, tühjenda "content" sisu
+            content = "";
+        } else {
+            content = content.slice(commaIndex + 2, content.length); // lõika lisatud muudatust contentist välja
+        }
     }
     return changes;
 }
